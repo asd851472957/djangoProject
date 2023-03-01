@@ -78,7 +78,7 @@ def api_listing_price_load():
     # df.to_excel(r"C:\Users\wb\Desktop\listing.xlsx")
 
 
-api_listing_price_load()
+# api_listing_price_load()
 # start_date = '2023-01-01'
 # end_date = '2023-01-31'
 # req = {
