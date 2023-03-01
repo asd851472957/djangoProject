@@ -1,0 +1,5 @@
+# appId = "ak_KGDmf6TCuShXh"
+appId = "ak_iP3Cia3r7eYlB"
+appsecret = "0PIfahEa1bpsLXCNsSq4wg=="
+domin = "https://openapi.lingxing.com"
+domin_bill = "https://openapi.lingxing.com/erp/sc/"
