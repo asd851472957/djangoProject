@@ -60,48 +60,21 @@ class Mos_Process(object):
                 fill_1 = PatternFill("solid", fgColor="88CE88")
                 sheet[f"{zm[i]}" + str(j)].fill = fill_1
 
+Inv_arr = ["MSKU","公司SKU","数据","父体","X备注","备注","分割1","颜色大类",
+                                 "细分颜色","组合方式","材质","可扩展",
+                                 "20寸的尺寸","ASIN","分割2","IN-STOCK库存","FBA在库预估",
+                                 "亚马逊总库存","3","海外仓库存","预创货件","4","7天流量","7天转化率",
+                                 "7天订单数量","7天实际日均","常规补货计划日均","5","14天订单数量",
+                                 "14天日均数量","7/14增长","14天流量","14天转化率","6","佣金","FBA费",
+                                 "成本","高","长","宽","计费重","$头程","价格","定价毛利率","DEAL",
+            "Coupon","Prime","OFF","售价","毛利率","毛利额$","7","定价毛利率",
+           "INSTOCK库存售罄天数","FBA预估库存售罄天数",
+           "FBA总库存（含在途）售罄天数","INSTOCK差额＜60",
+           "实际售罄天数","8","9","安全天数","应补货天数","10",
+           "15天特批","25天","35天","45天","60天","复核天数",
+           "合计天数","差值","11","工厂待出货数量","预下单量","12","x备注","F"]
 
-mos_arr = [
-    "asin",
-    "sku",
-    "level",
-    "新品标记",
-    "B段发货系数",
-    "MS-30D",
-    "MS-14D",
-    "MS-7D",
-    "每订单购买量",
-    "历史退货率",
-    "调整月销量",
-
-    "目标月销量",
-    "库存合计",
-    "在途合计",
-    "库存在途合计",
-    "本地库存",
-    "采购在途",
-    "30天MOS(仅库存)",
-    "14天MOS(仅库存)",
-    "7天MOS(仅库存)",
-    "调整月销量MOS(仅库存)",
-    "7天MOS(含在途)",
-    "调整月销量MOS(含在途)",
-    "加上本地库存调整月销量MOS",
-    "加上本地库存7天MOS",
-    #"预计拣货数量",
-    "age_91_to_180",
-    "age_180_plus",
-    "excess",
-    "需处理备注",
-    # "暂停广告判断",
-    "最近7天销量",
-    # "目前广告状态",
-    "MinPrice",
-    "sale_price",
-    "新品上架",
-    "断货重新入仓",
-    "运营操作记录明细",
-]
+mos_dic = {}
 
 def mos_wirte_excel(data, title, col=None, val=0, dirs="excel", fgColor="ff0000", is_exec=False) -> dict:
     global mos_dic
@@ -119,17 +92,17 @@ def mos_wirte_excel(data, title, col=None, val=0, dirs="excel", fgColor="ff0000"
     :param fgColor  # 保存文件子目录名
     :return:
     """
-    data = pd.DataFrame(data)[mos_arr].to_dict("records")
-    title = mos_arr
+    data = pd.DataFrame(data)[Inv_arr].to_dict("records")
+    title = Inv_arr
     mp = Mos_Process()
     print(title)
     wb = Workbook()
     sheet = wb.active
-    sheet.title = "sheet1"
+    sheet.title = "Sheet1"
 
     # 表格冻结
-    sheet.freeze_panes = "E2"  # 冻结单元格所设置的参数为一个单元格，这个单元格上侧和左侧的所有行 / 列会被冻结
-
+    sheet.freeze_panes = "AA2"  # 冻结单元格所设置的参数为一个单元格，这个单元格上侧和左侧的所有行 / 列会被冻结
+    wb.save(r'C:\Users\wb\Desktop\LXGG.xlsx')
     # sheet.freeze_panes = "A2"  # 第一行
     # 大写字母
     zm = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
@@ -180,7 +153,7 @@ def mos_wirte_excel(data, title, col=None, val=0, dirs="excel", fgColor="ff0000"
     for i in range(1, 36):
         sheet[zm[i] + "1"].alignment = ali
 
-    wb.save(file_path)
+
     # 清内存
     import gc
     del wb  # wb为打开的工作表
