@@ -24,7 +24,7 @@ from djangoProject.lingxingApi.resp_schema import ResponseResult
 from djangoProject.lingxingApi.sign import SignBase
 # a = requesterp()
 def listing_price_load():
-    df = pd.read_excel(r"C:\Users\wb\Desktop\Listing20230217-485158023997132800.xlsx").fillna("")
+    df = pd.read_excel(r"C:\Users\wb\Desktop\Listing20230303-490113876584333312.xlsx").fillna("")
     df = df.rename(columns={"店铺":"store","ASIN":"asin","父ASIN":"parent_asin","MSKU":"msku","SKU":"GS-sku","价格":"price"},inplace=False)
     df = df[['store','asin','parent_asin','msku','GS-sku','price']]
     df["date"] = datetime.datetime.now()
@@ -33,7 +33,6 @@ def listing_price_load():
     df["create_date"] = datetime.datetime.now()
     df.to_sql('listing_price_date',engine,chunksize=10000,if_exists='append',index=False)
     print("done")
-
 
 
 # listing_price_load()
@@ -51,7 +50,7 @@ def api_listing_price_load():
     df_sid = df_sid.reset_index()
     del df_sid["index"]
     a=11
-    a = requests.get("http://43.142.117.35/get_listing")
+    a = requests.get("http://43.142.117.35/get_listing",params={"offset":0})
     data = eval(a.text)
     data = data.get("data")
     df = pd.DataFrame()
@@ -300,8 +299,8 @@ def 补货表生成V1():
     df_Invdetail['Prime'] = 0
     df_Invdetail['OFF'] = 0
     df_Invdetail['售价'] = df_Invdetail['价格'] * (1-df_Invdetail['OFF'])-df_Invdetail['DEAL']*df_Invdetail['价格']-df_Invdetail['Coupon']-df_Invdetail['Prime']*df_Invdetail['价格']
-    df_Invdetail['毛利率'] = ((df_Invdetail['售价']-df_Invdetail['售价']*df_Invdetail['佣金']-df_Invdetail['成本']-df_Invdetail['成本'])/rate-df_Invdetail['FBA费']-df_Invdetail['$头程'])/df_Invdetail['售价']
-    df_Invdetail['毛利额$'] = df_Invdetail['售价'] * df_Invdetail['毛利率']
+    df_Invdetail['毛利率'] = (df_Invdetail['售价']-df_Invdetail['售价']*df_Invdetail['佣金']-df_Invdetail['成本']/rate-df_Invdetail['FBA费']-df_Invdetail['$头程'])/df_Invdetail['售价']
+    df_Invdetail['毛利额$'] = round(df_Invdetail['售价'] * df_Invdetail['毛利率'],2)
     df_Invdetail['7'] = ""
     df_Invdetail['INSTOCK库存售罄天数'] = "=IFERROR(P2/AA2,0)"
     df_Invdetail['FBA预估库存售罄天数'] = "=IFERROR(Q2/AA2,0)"
@@ -417,99 +416,113 @@ def 供应商问题标签():
 
 #
 #
-
-Inv_arr = ["MSKU","公司SKU","数据","父体","X备注","备注","分割1","颜色大类",
-                                 "细分颜色","组合方式","材质","可扩展",
-                                 "20寸的尺寸","ASIN","分割2","IN-STOCK库存","FBA在库预估",
-                                 "亚马逊总库存","3","海外仓库存","预创货件","4","7天流量","7天转化率",
-                                 "7天订单数量","7天实际日均","常规补货计划日均","5","14天订单数量",
-                                 "14天日均数量","7/14增长","14天流量","14天转化率","6","佣金","FBA费",
-                                 "成本","高","长","宽","计费重","$头程","价格","定价毛利率","DEAL",
-            "Coupon","Prime","OFF","售价","毛利率","毛利额$","7","定价毛利率",
-           "INSTOCK库存售罄天数","FBA预估库存售罄天数",
-           "FBA总库存（含在途）售罄天数","INSTOCK差额＜60",
-           "实际售罄天数","8","9","安全天数","应补货","备注2","1月待安排","10","备注"
-           "15天特批","25天","35天","45天","60天","复核天数",
-           "合计天数","差值","11","工厂待出货数量","预下单量","12","x备注","F"]
-inv_dic = {}
-title = Inv_arr
-import openpyxl
-excel=openpyxl.load_workbook(r'C:\Users\wb\Desktop\LXGG.xlsx')
-sheet=excel['Sheet1']
-sheet.freeze_panes='AB2' #冻结单元格
-zm = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
-for t in title:
-    if title.index(t) == 26:
-        zm.extend(["A%s" % i for i in zm])
-    if title.index(t) == 53:
-        zm.extend(["B%s" % i for i in zm])
-    sheet[f"{zm[title.index(t)]}1"].value = t
-    inv_dic.update({t: zm[title.index(t)]})  # {"标题": 列序号}
-
-
-border = Border(left=Side(border_style='thin', color='000000'),
-                right=Side(border_style='thin', color='000000'),
-                top=Side(border_style='thin', color='000000'),
-                bottom=Side(border_style='thin', color='000000'))
-
-#列染色和设置分割列宽,type=1为分割列
-def col_colors(names,color,type=0):
-    from openpyxl.styles import PatternFill
-    for name in names:
-        col = sheet[inv_dic['%s'%name]]
-        fills = PatternFill("solid", fgColor=color)
-        if type == 1:
-            sheet.column_dimensions[inv_dic["%s"%name]].width = 0.46
-        for cell in col:
-            cell.fill = fills
-
-sheet.column_dimensions.group(inv_dic['公司SKU'],inv_dic['父体'], hidden=True)
-sheet.column_dimensions.group(inv_dic['颜色大类'],inv_dic['ASIN'], hidden=True)
-sheet.column_dimensions.group(inv_dic['佣金'],inv_dic['$头程'], hidden=True)
-sheet.column_dimensions.group(inv_dic['DEAL'],inv_dic['毛利额$'], hidden=True)
-sheet.column_dimensions.group(inv_dic['备注2'],inv_dic['1月待安排'], hidden=True)
-# sheet.column_dimensions.outline_level=None
-
-col_colors(['分割1','分割2','3','4','5','6','7','8','9','10','11','12'],"C00000",type=1)
-col_colors(['FBA在库预估'],"B4C6E7")
-col_colors(['海外仓库存','预创货件'],"FFF2CC")
-col_colors(['7天流量','7天转化率'],"D6DCE4")
-col_colors(['常规补货计划日均'],"F8CBAD")
-col_colors(['INSTOCK库存售罄天数','FBA预估库存售罄天数','FBA总库存（含在途）售罄天数','INSTOCK差额＜60'],"D6DCE4")
-col_colors(["14天流量","14天转化率","佣金","FBA费","成本","高","长","宽","计费重","$头程"],"D6DCE4")
-col_colors(["价格","定价毛利率"],"E2EFDA")
-col_colors(["实际售罄天数"],"FCE4D6")
-col_colors(["安全天数"],"DDEBF7")
-col_colors(["应补货"],"F4B084")
-col_colors(["备注2","1月待安排"],"FFF2CC")
-col_colors(["25天","35天"],"DDEBF7")
-col_colors(["45天","60天"],"FCE4D6")
-col_colors(["复核天数"],"FFE699")
-col_colors(["合计天数"],"DDEBF7")
-font = Font(
-    name="等线",   # 字体
-    size=11,         # 字体大小
-    color="000000",  # 字体颜色，用16进制rgb表示
-    bold=True,       # 是否加粗，True/False
-    italic=False,     # 是否斜体，True/False
-    strike=None,     # 是否使用删除线，True/False
-    underline=None,  # 下划线, 可选'singleAccounting', 'double', 'single', 'doubleAccounting'
-)
+def write_excel():
+    Inv_arr = ["MSKU","公司SKU","数据","父体","X备注","备注","分割1","颜色大类",
+                                     "细分颜色","组合方式","材质","可扩展",
+                                     "20寸的尺寸","ASIN","分割2","IN-STOCK库存","FBA在库预估",
+                                     "亚马逊总库存","3","海外仓库存","预创货件","4","7天流量","7天转化率",
+                                     "7天订单数量","7天实际日均","常规补货计划日均","5","14天订单数量",
+                                     "14天日均数量","7/14增长","14天流量","14天转化率","6","佣金","FBA费",
+                                     "成本","高","长","宽","计费重","$头程","价格","定价毛利率","DEAL",
+                "Coupon","Prime","OFF","售价","毛利率","毛利额$","7","定价毛利率",
+               "INSTOCK库存售罄天数","FBA预估库存售罄天数",
+               "FBA总库存（含在途）售罄天数","INSTOCK差额＜60",
+               "实际售罄天数","8","9","安全天数","应补货","备注2","1月待安排","10","备注"
+               "15天特批","25天","35天","45天","60天","复核天数",
+               "合计天数","差值","11","工厂待出货数量","预下单量","12","x备注","F"]
+    inv_dic = {}
+    title = Inv_arr
+    import openpyxl
+    excel=openpyxl.load_workbook(r'C:\Users\wb\Desktop\LXGG.xlsx')
+    sheet=excel['Sheet1']
+    sheet.freeze_panes='AB2' #冻结单元格
+    zm = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
+    for t in title:
+        if title.index(t) == 26:
+            zm.extend(["A%s" % i for i in zm])
+        if title.index(t) == 53:
+            zm.extend(["B%s" % i for i in zm])
+        sheet[f"{zm[title.index(t)]}1"].value = t
+        inv_dic.update({t: zm[title.index(t)]})  # {"标题": 列序号}
 
 
+    border = Border(left=Side(border_style='thin', color='000000'),
+                    right=Side(border_style='thin', color='000000'),
+                    top=Side(border_style='thin', color='000000'),
+                    bottom=Side(border_style='thin', color='000000'))
 
-align=Alignment(horizontal='center',vertical='center')
-for i in range(1,sheet.max_row+1): #遍历行号
-    for j in range(1,sheet.max_column+1): # 遍历当前行的所有表格
-        sheet.cell(row=i,column=j).border = border  #将当前行的每一个表格填充颜色
-        sheet.row_dimensions[i].height = 30
-        # sheet.cell(row=i,column=j).alignment = Alignment(wrap_text=True)
-        sheet.cell(row=i,column=j).alignment = align
-        sheet.cell(row=i,column=j).font = font
+    #列染色和设置分割列宽,type=1为分割列
+    def col_colors(names,color,type=0):
+        from openpyxl.styles import PatternFill
+        for name in names:
+            col = sheet[inv_dic['%s'%name]]
+            fills = PatternFill("solid", fgColor=color)
+            if type == 1:
+                sheet.column_dimensions[inv_dic["%s"%name]].width = 0.46
+            for cell in col:
+                cell.fill = fills
 
-    i=i+1 #遍历下一行
+    sheet.column_dimensions.group(inv_dic['公司SKU'],inv_dic['父体'], hidden=True)
+    sheet.column_dimensions.group(inv_dic['颜色大类'],inv_dic['ASIN'], hidden=True)
+    sheet.column_dimensions.group(inv_dic['佣金'],inv_dic['$头程'], hidden=True)
+    sheet.column_dimensions.group(inv_dic['DEAL'],inv_dic['毛利额$'], hidden=True)
+    sheet.column_dimensions.group(inv_dic['备注2'],inv_dic['1月待安排'], hidden=True)
+    # sheet.column_dimensions.outline_level=None
+
+    col_colors(['分割1','分割2','3','4','5','6','7','8','9','10','11','12'],"C00000",type=1)
+    col_colors(['FBA在库预估'],"B4C6E7")
+    col_colors(['海外仓库存','预创货件'],"FFF2CC")
+    col_colors(['7天流量','7天转化率'],"D6DCE4")
+    col_colors(['常规补货计划日均'],"F8CBAD")
+    col_colors(['INSTOCK库存售罄天数','FBA预估库存售罄天数','FBA总库存（含在途）售罄天数','INSTOCK差额＜60'],"D6DCE4")
+    col_colors(["14天流量","14天转化率","佣金","FBA费","成本","高","长","宽","计费重","$头程"],"D6DCE4")
+    col_colors(["价格","定价毛利率"],"E2EFDA")
+    col_colors(["实际售罄天数"],"FCE4D6")
+    col_colors(["安全天数"],"DDEBF7")
+    col_colors(["应补货"],"F4B084")
+    col_colors(["备注2","1月待安排"],"FFF2CC")
+    col_colors(["25天","35天"],"DDEBF7")
+    col_colors(["45天","60天"],"FCE4D6")
+    col_colors(["复核天数"],"FFE699")
+    col_colors(["合计天数"],"DDEBF7")
+    font1 = Font(
+        name="等线",   # 字体
+        size=11,         # 字体大小
+        color="000000",  # 字体颜色，用16进制rgb表示
+        bold=True,       # 是否加粗，True/False
+        italic=False,     # 是否斜体，True/False
+        strike=None,     # 是否使用删除线，True/False
+        underline=None,  # 下划线, 可选'singleAccounting', 'double', 'single', 'doubleAccounting'
+    )
+    font2 = Font(
+        name="等线",   # 字体
+        size=11,         # 字体大小
+        color="000000",  # 字体颜色，用16进制rgb表示
+        bold=False,       # 是否加粗，True/False
+        italic=False,     # 是否斜体，True/False
+        strike=None,     # 是否使用删除线，True/False
+        underline=None,  # 下划线, 可选'singleAccounting', 'double', 'single', 'doubleAccounting'
+    )
 
 
-excel.save(r'C:\Users\wb\Desktop\LXGG1.xlsx')
+
+    align=Alignment(horizontal='center',vertical='center')
+    for i in range(1,sheet.max_row+1): #遍历行号
+        for j in range(1,sheet.max_column+1): # 遍历当前行的所有表格
+            sheet.cell(row=i,column=j).border = border  #将当前行的每一个表格填充颜色
+            sheet.row_dimensions[i].height = 30
+
+            # sheet.cell(row=i,column=j).alignment = Alignment(wrap_text=True)
+            sheet.cell(row=i,column=j).alignment = align
+            if i ==1:
+                sheet.cell(row=i,column=j).font = font1
+                sheet.row_dimensions[i].height = 85
+            else:
+                sheet.cell(row=i, column=j).font = font2
+
+        i=i+1 #遍历下一行
 
 
+    excel.save(r'C:\Users\wb\Desktop\LXGG1.xlsx')
+
+# write_excel()
