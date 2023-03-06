@@ -55,8 +55,9 @@ def api_listing_price_load():
     while True:
         res = requests.get("http://43.142.117.35/get_listing",params={"offset":offset}).json()
         data = res.get("data")
+        if len(data)==0:
+            break
         df = pd.DataFrame()
-
         for i in data:
             status = i.get("status")
             is_delete = i.get("is_delete")
@@ -81,8 +82,10 @@ def api_listing_price_load():
             columns={"name": "store"},
             inplace=False)
         df = df[['store', 'asin', 'parent_asin', 'msku', 'GS-sku','sku','price','date','update_date','create_date']]
-        df_all.append(df)
+        df_all = df_all.append(df)
+        offset += 2000
     df_all.to_sql('listing_price_date', engine, chunksize=10000, if_exists='append', index=False)
+    print("done")
         # df.to_excel(r"C:\Users\wb\Desktop\listing.xlsx")
 
 
@@ -237,8 +240,8 @@ def 补货表生成V1():
     df_14D['总流量'] = df_14D['会话次数 – 总计'] + df_14D['会话次数 – 总计 – B2B']
     df_14D['总出单'] = df_14D['订单商品总数'] + df_14D['订单商品总数 - B2B']
     df_14D['转化率'] = df_14D['总出单'] / df_14D['总流量']
-    df_7D['转化率'] = df_7D['转化率'].map(lambda x: format(x,'.2%'))
-    df_14D['转化率'] = df_14D['转化率'].map(lambda x: format(x,'.2%'))
+    # df_7D['转化率'] = df_7D['转化率'].map(lambda x: format(x,'.2%'))
+    # df_14D['转化率'] = df_14D['转化率'].map(lambda x: format(x,'.2%'))
 
 
 
@@ -267,20 +270,21 @@ def 补货表生成V1():
     df_Invdetail['预创货件'] = 0
     df_Invdetail = pd.merge(df_Invdetail,df_7D[['sku','总流量','转化率','总出单']],left_on=['sku'],right_on=['sku'],how="left")
     df_Invdetail.rename(columns={"总流量": "7天流量","转化率":"7天转化率","总出单":"7天订单数量"},inplace=True)
-    df_Invdetail['7天实际日均'] = round(df_Invdetail['7天订单数量']/7,1)
+    df_Invdetail['7天实际日均'] = df_Invdetail['7天订单数量']/7
     df_Invdetail['常规补货计划日均'] = 0
     df_Invdetail = pd.merge(df_Invdetail,df_14D[['sku','总流量','转化率','总出单']],left_on=['sku'],right_on=['sku'],how="left")
     df_Invdetail.rename(columns={"总流量": "14天流量","转化率":"14天转化率","总出单":"14天订单数量"},inplace=True)
-    df_Invdetail['14天日均数量'] = round(df_Invdetail['14天订单数量']/14)
+    df_Invdetail['14天日均数量'] = df_Invdetail['14天订单数量']/14
     df_Invdetail['7/14增长'] = (df_Invdetail['7天实际日均']-df_Invdetail['14天日均数量'])/df_Invdetail['14天日均数量']
+    # df_Invdetail['7/14增长'] = df_Invdetail['7/14增长'].map(lambda x: format(x, '.2%'))
     df_Invdetail.rename(columns={"asin": "ASIN","your-price":"价格"},inplace=True)
     df_Invdetail = df_Invdetail.fillna(0)
     weight_av = 6000
     rate = 6.6
     canshu = 7
-    df_Invdetail['计费重'] = round((df_Invdetail['长']*df_Invdetail['宽']*df_Invdetail['高'])/weight_av)
+    df_Invdetail['计费重'] = (df_Invdetail['长']*df_Invdetail['宽']*df_Invdetail['高'])/weight_av
     df_Invdetail['价格'] = df_Invdetail['价格'].replace("",0)
-    df_Invdetail["$头程"] = round(df_Invdetail['计费重']*canshu/rate,1)
+    df_Invdetail["$头程"] = df_Invdetail['计费重']*canshu/rate
 
     df_Invdetail['分割1'] = ""
     df_Invdetail['分割2'] = ""
@@ -304,7 +308,7 @@ def 补货表生成V1():
     df_Invdetail['OFF'] = 0
     df_Invdetail['售价'] = df_Invdetail['价格'] * (1-df_Invdetail['OFF'])-df_Invdetail['DEAL']*df_Invdetail['价格']-df_Invdetail['Coupon']-df_Invdetail['Prime']*df_Invdetail['价格']
     df_Invdetail['毛利率'] = (df_Invdetail['售价']-df_Invdetail['售价']*df_Invdetail['佣金']-df_Invdetail['成本']/rate-df_Invdetail['FBA费']-df_Invdetail['$头程'])/df_Invdetail['售价']
-    df_Invdetail['毛利额$'] = round(df_Invdetail['售价'] * df_Invdetail['毛利率'],2)
+    df_Invdetail['毛利额$'] = df_Invdetail['售价'] * df_Invdetail['毛利率']
     df_Invdetail['7'] = ""
     df_Invdetail['INSTOCK库存售罄天数'] = "=IFERROR(P2/AA2,0)"
     df_Invdetail['FBA预估库存售罄天数'] = "=IFERROR(Q2/AA2,0)"
@@ -333,8 +337,22 @@ def 补货表生成V1():
     df_Invdetail['12'] = ""
     df_Invdetail["x备注"] = ""
     df_Invdetail["F"] = ""
-    df_Invdetail['定价毛利率'] = df_Invdetail['定价毛利率'].map(lambda x: format(x,'.2%'))
-    df_Invdetail['佣金'] = df_Invdetail['佣金'].map(lambda x: format(x,'.2%'))
+    # df_Invdetail['定价毛利率'] = df_Invdetail['定价毛利率'].map(lambda x: format(x,'.2%'))
+    # df_Invdetail['佣金'] = df_Invdetail['佣金'].map(lambda x: format(x,'.2%'))
+    Inv_arr = ["MSKU", "公司SKU", "数据", "父体", "X备注", "备注", "分割1", "颜色大类",
+               "细分颜色", "组合方式", "材质", "可扩展",
+               "20寸的尺寸", "ASIN", "分割2", "IN-STOCK库存", "FBA在库预估",
+               "亚马逊总库存", "3", "海外仓库存", "预创货件", "4", "7天流量", "7天转化率",
+               "7天订单数量", "7天实际日均", "常规补货计划日均", "5", "14天订单数量",
+               "14天日均数量", "7/14增长", "14天流量", "14天转化率", "6", "佣金", "FBA费",
+               "成本", "高", "长", "宽", "计费重", "$头程", "价格", "定价毛利率", "DEAL",
+               "Coupon", "Prime", "OFF", "售价", "毛利率", "毛利额$", "7",
+               "INSTOCK库存售罄天数", "FBA预估库存售罄天数",
+               "FBA总库存（含在途）售罄天数", "INSTOCK差额＜60",
+               "实际售罄天数", "8", "9", "安全天数", "应补货", "8", "备注2", "1月待安排", "10", "备注",
+               "15天特批", "25天", "35天", "45天", "60天", "复核天数",
+               "合计天数", "差值", "11", "工厂待出货数量", "预下单量", "12", "x备注", "F"]
+    df_Invdetail = df_Invdetail[Inv_arr]
     writer = pd.ExcelWriter(r"C:\Users\wb\Desktop\LXGG.xlsx", engine='openpyxl')  # 创建数据存放路径
     df_Invdetail.to_excel(writer, index=False, sheet_name='Sheet1')
     writer.save()  # 文件保存
@@ -428,10 +446,10 @@ def write_excel():
                                      "7天订单数量","7天实际日均","常规补货计划日均","5","14天订单数量",
                                      "14天日均数量","7/14增长","14天流量","14天转化率","6","佣金","FBA费",
                                      "成本","高","长","宽","计费重","$头程","价格","定价毛利率","DEAL",
-                "Coupon","Prime","OFF","售价","毛利率","毛利额$","7","定价毛利率",
+                "Coupon","Prime","OFF","售价","毛利率","毛利额$","7",
                "INSTOCK库存售罄天数","FBA预估库存售罄天数",
                "FBA总库存（含在途）售罄天数","INSTOCK差额＜60",
-               "实际售罄天数","8","9","安全天数","应补货","备注2","1月待安排","10","备注"
+               "实际售罄天数","8","9","安全天数","应补货","8","备注2","1月待安排","10","备注",
                "15天特批","25天","35天","45天","60天","复核天数",
                "合计天数","差值","11","工厂待出货数量","预下单量","12","x备注","F"]
     inv_dic = {}
@@ -444,7 +462,7 @@ def write_excel():
     for t in title:
         if title.index(t) == 26:
             zm.extend(["A%s" % i for i in zm])
-        if title.index(t) == 53:
+        if title.index(t) == 52:
             zm.extend(["B%s" % i for i in zm])
         sheet[f"{zm[title.index(t)]}1"].value = t
         inv_dic.update({t: zm[title.index(t)]})  # {"标题": 列序号}
@@ -465,6 +483,12 @@ def write_excel():
                 sheet.column_dimensions[inv_dic["%s"%name]].width = 0.46
             for cell in col:
                 cell.fill = fills
+    #设置单元格格式
+    def col_format(names,format):
+        for name in names:
+            col = sheet[inv_dic['%s' % name]]
+            for cell in col:
+                cell.number_format = '%s'%format
 
     sheet.column_dimensions.group(inv_dic['公司SKU'],inv_dic['父体'], hidden=True)
     sheet.column_dimensions.group(inv_dic['颜色大类'],inv_dic['ASIN'], hidden=True)
@@ -515,7 +539,6 @@ def write_excel():
         for j in range(1,sheet.max_column+1): # 遍历当前行的所有表格
             sheet.cell(row=i,column=j).border = border  #将当前行的每一个表格填充颜色
             sheet.row_dimensions[i].height = 30
-
             # sheet.cell(row=i,column=j).alignment = Alignment(wrap_text=True)
             sheet.cell(row=i,column=j).alignment = align
             if i ==1:
@@ -525,6 +548,12 @@ def write_excel():
                 sheet.cell(row=i, column=j).font = font2
 
         i=i+1 #遍历下一行
+
+        col_format(['7天转化率','14天转化率','毛利率'],'0.0%')
+        col_format(['7/14增长','佣金','定价毛利率'],'0%')
+        col_format(['7天实际日均','14天日均数量'],'0.0')
+        col_format(['FBA费','毛利额$'],'0.00')
+        col_format(['实际售罄天数'],'0')
 
 
     excel.save(r'C:\Users\wb\Desktop\LXGG1.xlsx')
@@ -545,16 +574,19 @@ def write_excel():
 #     return img
 # analysis_base64(src)
 
-# df = pd.read_csv(r'C:\Users\wb\Desktop\安克创新2.0.csv')
-# Note=open(r'C:\Users\wb\Desktop\text.txt',mode='a',encoding='utf-8')
-# for i in df.index:
-#     div = "<div>-------------------------------------------------------%s--------------------------------------------</div></br>"%(i+1)
-#     Note.write(div)
-#     text = df.loc[i,"字段"]
-#     img = df.loc[i,"字段1"]
-#     Note.write(text)
-#     Note.write("</br></br>")
-#     Note.write(img)
-# Note.close()
+df = pd.read_csv(r'C:\Users\wb\Desktop\安克创新3.0.csv')
+Note=open(r'C:\Users\wb\Desktop\text.txt',mode='a',encoding='utf-8')
+for i in df.index:
+    if "安克" not in df.loc[i,"字段"]:
+        continue
+    div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>'%(i+1)
+    Note.write(div)
+    text = df.loc[i,"字段"]
+    img = df.loc[i,"字段1"]
+    Note.write(text)
+    Note.write("</br></br>")
+    Note.write(img)
+Note.close()
 
-os.rename(r'C:\Users\wb\Desktop\text.txt',r'C:\Users\wb\Desktop\text.html')
+# os.rename(r'C:\Users\wb\Desktop\text.txt',r'C:\Users\wb\Desktop\text.html')
+# //*[@class="dialog-wrap active"]/div/div[2]/i[1]
