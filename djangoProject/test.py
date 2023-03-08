@@ -239,6 +239,8 @@ def 补货表生成V1():
     df_14D['总流量'] = df_14D['会话次数 – 总计'] + df_14D['会话次数 – 总计 – B2B']
     df_14D['总出单'] = df_14D['订单商品总数'] + df_14D['订单商品总数 - B2B']
     df_14D['转化率'] = df_14D['总出单'] / df_14D['总流量']
+    df_7D = df_7D[['sku', '（子）ASIN', '会话次数 – 总计', '会话次数 – 总计 – B2B', '订单商品总数', '订单商品总数 - B2B', '总流量', '总出单', '转化率']]
+    df_14D = df_14D[['sku', '（子）ASIN', '会话次数 – 总计', '会话次数 – 总计 – B2B', '订单商品总数', '订单商品总数 - B2B', '总流量', '总出单', '转化率']]
     # df_7D['转化率'] = df_7D['转化率'].map(lambda x: format(x,'.2%'))
     # df_14D['转化率'] = df_14D['转化率'].map(lambda x: format(x,'.2%'))
     #补货表数据处理
@@ -477,7 +479,7 @@ def write_excel():
     num_dict = {}
     for index,name in enumerate(title):
         num_dict[name] = index+1
-
+    #设置公式
     for i in range(3,sheet.max_row+1): #遍历行号
         sheet.cell(row=i,column=num_dict["IN-STOCK库存"]).value = "=IFERROR(VLOOKUP(A:A,管理亚马逊库存!A:Y,24,0),0)"
         sheet.cell(row=i,column=num_dict["亚马逊总库存"]).value = "=IFERROR(VLOOKUP(A:A,管理亚马逊库存!A:Y,25,0),0)"
@@ -522,6 +524,7 @@ def write_excel():
     col_format(['7/14增长', '佣金', '定价毛利率'], '0%')
     col_format(['7天实际日均', '14天日均数量','计费重','$头程'], '0.0')
     col_format(['FBA费', '毛利额$'], '0.00')
+    col_format(['实际售罄天数','合计','复核天数','合计天数','INSTOCK库存售罄天数','FBA预估库存售罄天数','FBA总库存（含在途）售罄天数','INSTOCK差额＜60','应补货'], '0')
     #列染色和设置分割列宽,type=1为分割列
     def col_colors(names,color,type=0):
         from openpyxl.styles import PatternFill
@@ -589,15 +592,15 @@ def write_excel():
                 sheet.cell(row=i, column=j).font = font2
         i=i+1 #遍历下一行
 
-
-
-
+    for i in range(1,sheet.max_row+1):
+        for j in range(1,6):
+            sheet.cell(row=i, column=j).font = font1
 
 
 
     excel.save(r'C:\Users\wb\Desktop\LXGG1.xlsx')
 
-write_excel()
+# write_excel()
 
 # import base64
 # import re
