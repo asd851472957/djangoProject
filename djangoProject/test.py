@@ -615,12 +615,12 @@ def write_excel():
 #     img = base64.urlsafe_b64decode(data)
 #     return img
 # analysis_base64(src)
-def BOSS直聘转出html():
+def BOSS直聘转出html(name):
     # //*[@class="dialog-wrap active"]/div/div[2]/i[1]
-    df = pd.read_csv(r'C:\Users\wb\Desktop\安克创新3.0.csv')
-    Note=open(r'C:\Users\wb\Desktop\text.txt',mode='a',encoding='utf-8')
+    df = pd.read_csv(r'C:\Users\wb\Desktop\%s.csv'%name,error_bad_lines=False).fillna("")
+    Note=open(r'C:\Users\wb\Desktop\%s.txt'%name,mode='a',encoding='utf-8')
     for i in df.index:
-        if "安克" not in df.loc[i,"字段"]:
+        if "汇量" not in df.loc[i,"字段"]:
             continue
         div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>'%(i+1)
         Note.write(div)
@@ -630,5 +630,90 @@ def BOSS直聘转出html():
         Note.write("</br></br>")
         Note.write(img)
     Note.close()
-    os.rename(r'C:\Users\wb\Desktop\text.txt',r'C:\Users\wb\Desktop\text.html')
-# BOSS直聘转出html()
+    os.rename(r'C:\Users\wb\Desktop\%s.txt'%name,r'C:\Users\wb\Desktop\%s.html'%name)
+# BOSS直聘转出html("汇量科技")
+
+def 美婷需求():
+    df_sales = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx",sheet_name="配件销量（月度）")
+    all = set(df_sales.columns.values.tolist())
+    els = set(['地区+SKU唯一项','地区','单品SKU','SKU唯一项','一级分类','二级分类','三级分类','范围\n平均销量','季度平均销量'])
+    date = all-els
+    date = list(date)
+    for i in df_sales.columns.values.tolist():
+        if i in date:
+            df_sales.rename(columns={"%s"%i: "销量%s"%i},inplace=True)
+
+    df_fba = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="FBA库存（周度）")
+    all = set(df_fba.columns.values.tolist())
+    els = set(['地区+SKU唯一项', '地区', '单品SKU', 'SKU唯一项'])
+    date = all - els
+    date = list(date)
+    for i in df_fba.columns.values.tolist():
+        if i in date:
+            df_fba.rename(columns={"%s" % i: "FBA库存%s" % i}, inplace=True)
+
+    df_out = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="海外库存（周度）")
+    all = set(df_out.columns.values.tolist())
+    els = set(['地区+SKU唯一项', '地区', '单品SKU', 'SKU唯一项'])
+    date = all - els
+    date = list(date)
+    for i in df_out.columns.values.tolist():
+        if i in date:
+            df_out.rename(columns={"%s" % i: "海外%s" % i}, inplace=True)
+
+    df_inv = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="本地成品在仓（周度）")
+    all = set(df_out.columns.values.tolist())
+    els = set(['地区+SKU唯一项', '地区', '单品SKU', 'SKU唯一项'])
+    date = all - els
+    date = list(date)
+    for i in df_inv.columns.values.tolist():
+        if i in date:
+            df_inv.rename(columns={"%s" % i: "海外%s" % i}, inplace=True)
+
+    df_fit = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="本地配件在仓（周度）")
+    all = df_fit.columns.values.tolist()
+    date = all[6:]
+    def jishu(name):
+        num = 0
+        for i in date:
+            if i == "%s" % name:
+                num = 1
+            elif "Unnamed" in i:
+                num += 1
+            else:
+                break
+        if name == '公司在仓':
+            num = num - 1
+        return num
+    gs_inv_num = jishu("公司在仓")
+    NU_inv_num = jishu("北美")
+    eu_inv_num = jishu("欧洲")
+    jp_inv_num = jishu("日本")
+
+
+
+    a=11
+
+# 美婷需求()
+
+
+df_fit = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="本地配件在仓（周度）")
+all = df_fit.columns.values.tolist()
+date = all[6:]
+def jishu(name):
+    num = 0
+    for i in date:
+        if i == "%s" % name:
+            num = 1
+        elif "Unnamed" in i:
+            num += 1
+        else:
+            continue
+    if name == '公司在仓':
+        num = num - 1
+    return num
+gs_inv_num = jishu("公司在仓")
+NU_inv_num = jishu("北美")
+eu_inv_num = jishu("欧洲")
+jp_inv_num = jishu("日本")
+a=11
