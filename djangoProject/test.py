@@ -110,7 +110,7 @@ req_body = {
     }
 
 # a = requests.post("http://43.142.117.35/get_fbawarehouse")
-# a = requests.post("http://43.142.117.35/productPerFormance",params=req_body)
+a = requests.post("http://43.142.117.35/productPerFormance",params=req_body)
 # b = eval(json.dumps(a.text))
 # eval(b)
 # a.json()
@@ -620,18 +620,21 @@ def BOSS直聘转出html(name):
     df = pd.read_csv(r'C:\Users\wb\Desktop\%s.csv'%name,error_bad_lines=False).fillna("")
     Note=open(r'C:\Users\wb\Desktop\%s.txt'%name,mode='a',encoding='utf-8')
     for i in df.index:
-        if "汇量" not in df.loc[i,"字段"]:
+        if "%s"%name not in df.loc[i,"字段"]:
             continue
-        div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>'%(i+1)
-        Note.write(div)
-        text = df.loc[i,"字段"]
-        img = df.loc[i,"字段1"]
-        Note.write(text)
-        Note.write("</br></br>")
-        Note.write(img)
+        # keywords = ["物流"]
+        # contains_all_keywords = all(keyword in df.loc[i,"字段"] for keyword in keywords)
+        if "物流" in df.loc[i,"字段"] or "物流专员" in df.loc[i,"字段"] or "供应链" in df.loc[i,"字段"] :
+            div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>'%(i+1)
+            Note.write(div)
+            text = df.loc[i,"字段"]
+            img = df.loc[i,"字段1"]
+            Note.write(text)
+            Note.write("</br></br>")
+            Note.write(img)
     Note.close()
     os.rename(r'C:\Users\wb\Desktop\%s.txt'%name,r'C:\Users\wb\Desktop\%s.html'%name)
-# BOSS直聘转出html("汇量科技")
+# BOSS直聘转出html("新时颖")
 
 def 美婷需求():
     df_sales = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx",sheet_name="配件销量（月度）")
@@ -697,23 +700,5 @@ def 美婷需求():
 # 美婷需求()
 
 
-df_fit = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx", sheet_name="本地配件在仓（周度）")
-all = df_fit.columns.values.tolist()
-date = all[6:]
-def jishu(name):
-    num = 0
-    for i in date:
-        if i == "%s" % name:
-            num = 1
-        elif "Unnamed" in i:
-            num += 1
-        else:
-            continue
-    if name == '公司在仓':
-        num = num - 1
-    return num
-gs_inv_num = jishu("公司在仓")
-NU_inv_num = jishu("北美")
-eu_inv_num = jishu("欧洲")
-jp_inv_num = jishu("日本")
+
 a=11
