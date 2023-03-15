@@ -110,7 +110,7 @@ req_body = {
     }
 
 # a = requests.post("http://43.142.117.35/get_fbawarehouse")
-a = requests.post("http://43.142.117.35/productPerFormance",params=req_body)
+# a = requests.post("http://43.142.117.35/productPerFormance",params=req_body)
 # b = eval(json.dumps(a.text))
 # eval(b)
 # a.json()
@@ -620,21 +620,24 @@ def BOSS直聘转出html(name):
     df = pd.read_csv(r'C:\Users\wb\Desktop\%s.csv'%name,error_bad_lines=False).fillna("")
     Note=open(r'C:\Users\wb\Desktop\%s.txt'%name,mode='a',encoding='utf-8')
     for i in df.index:
-        if "%s"%name not in df.loc[i,"字段"]:
-            continue
-        # keywords = ["物流"]
-        # contains_all_keywords = all(keyword in df.loc[i,"字段"] for keyword in keywords)
-        if "物流" in df.loc[i,"字段"] or "物流专员" in df.loc[i,"字段"] or "供应链" in df.loc[i,"字段"] :
-            div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>'%(i+1)
-            Note.write(div)
-            text = df.loc[i,"字段"]
-            img = df.loc[i,"字段1"]
-            Note.write(text)
-            Note.write("</br></br>")
-            Note.write(img)
+        # if "%s"%name not in df.loc[i,"字段"]:
+        #     continue
+        df.loc[i, "字段"] = df.loc[i, "字段"].replace("FBA","fba")
+        df.loc[i, "字段"] = df.loc[i, "字段"].replace("EXCEL","fba")
+        keywords = ["fba"]
+        if "fba" not in df.loc[i, "字段"]:
+            break
+        div = '<div style="background-color: chartreuse">-------------------------------------------------------序号%s--------------------------------------------</div></br>' % (
+                    i + 1)
+        Note.write(div)
+        text = df.loc[i, "字段"]
+        img = df.loc[i, "字段1"]
+        Note.write(text)
+        Note.write("</br></br>")
+        Note.write(img)
     Note.close()
     os.rename(r'C:\Users\wb\Desktop\%s.txt'%name,r'C:\Users\wb\Desktop\%s.html'%name)
-# BOSS直聘转出html("新时颖")
+BOSS直聘转出html("物流")
 
 def 美婷需求():
     df_sales = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx",sheet_name="配件销量（月度）")
@@ -698,6 +701,29 @@ def 美婷需求():
     a=11
 
 # 美婷需求()
+
+
+def huayong():
+    df_all = pd.DataFrame()
+    path = r"C:\Users\wb\Desktop\新建文件夹"
+    for file in os.listdir(path):
+        if file.endswith('xls'):
+            asin = file[:10]
+            io = os.path.join(path, file)
+            df = pd.read_excel(io,skiprows=1)
+            df['asin'] = asin
+            df_all = df_all.append(df)
+            a=11
+    df_all = df_all.reset_index()
+    del df_all["index"]
+    del df_all["#"]
+    # df_all = df_all[[
+    #     "asin","关键词","词对产品曝光综合贡献","词对产品曝光分类贡献 - 自然" , "词对产品曝光分类贡献 - 广告" ,"词对产品曝光分类贡献 - 推荐","产品在词下的曝光构成 - 自然","产品在词下的曝光构成 - 广告"
+    #      ,"产品在词下的曝光构成 - 推荐" ,"产品在词下的广告曝光构成 - SP" , "产品在词下的广告曝光构成 - SB"  , "产品在词下的广告曝光构成 - SBV", "关键词类型"
+    #     ,"转化效果" , "搜索量排名"   ,"搜索量" , "在售商品数"  ,  "自然排名"  ,"自然排名详情"  ,  "自然排名时间" ,   "SP广告排名"  ,  "SP广告排名详情"   , "SP广告排名时间", "曝光位置","关键词更新时间"
+    # ]]
+    df_all.to_excel(r"C:\Users\wb\Desktop\all.xlsx")
+# huayong()
 
 
 
