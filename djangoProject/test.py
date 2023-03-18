@@ -637,7 +637,7 @@ def BOSS直聘转出html(name):
         Note.write(img)
     Note.close()
     os.rename(r'C:\Users\wb\Desktop\%s.txt'%name,r'C:\Users\wb\Desktop\%s.html'%name)
-BOSS直聘转出html("物流")
+# BOSS直聘转出html("物流")
 
 def 美婷需求():
     df_sales = pd.read_excel(r"C:\Users\wb\Desktop\每周-划分地区3.7.xlsx",sheet_name="配件销量（月度）")
